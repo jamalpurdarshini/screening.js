@@ -1,0 +1,75 @@
+
+
+   <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TODO LIST</title>
+</head>
+<body>
+  <h1>TODO LIST</h1>
+  <input id="list" placeholder="add items" />
+  <button onclick="AddItems()">ADD</button>
+  <ul id="ListItems"></ul>
+
+  <script>
+    function AddItems() {
+      let input = document.getElementById("list");
+      let task = input.value.trim();
+      if (task === "") return;
+
+      let li = document.createElement("li");
+      li.innerHTML = `
+        ${task}
+        <button onclick="EditItem(this)">EDIT</button>
+        <button onclick="DeleteItem(this)">DELETE</button>
+      `;
+      document.getElementById("ListItems").appendChild(li);
+
+ 
+      SaveToLocalStorage(task);
+
+      input.value = "";
+    }
+
+    function SaveToLocalStorage(task) {
+      let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+      tasks.push(task);
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+    }
+
+    function EditItem(btn) {
+      let li = btn.parentElement;
+      let currentText = li.firstChild.textContent.trim();
+      let newElement = prompt("Edit text", currentText);
+      if (newElement !== null && newElement.trim() !== "") {
+        li.firstChild.textContent = newElement + " ";
+
+
+      }
+    }
+
+    function DeleteItem(btn) {
+      btn.parentElement.remove();
+  
+    }
+
+    function LoadItems() {
+      let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+      tasks.forEach(task => {
+        let li = document.createElement("li");
+        li.innerHTML = `
+          ${task}
+          <button onclick="EditItem(this)">EDIT</button>
+          <button onclick="DeleteItem(this)">DELETE</button>
+        `;
+        document.getElementById("ListItems").appendChild(li);
+      });
+    }
+
+
+    window.onload = LoadItems;
+  </script>
+</body>
+</html>
