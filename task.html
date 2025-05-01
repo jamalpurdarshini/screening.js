@@ -1,0 +1,169 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Todo List with Login</title>
+  <style>
+    body { font-family: Arial; padding: 20px; text-align: center; }
+    input, button { padding: 8px; margin: 5px; }
+    ul { padding: 0; }
+    li {
+      list-style: none;
+      margin: 10px auto;
+      width: 300px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    span { flex: 1; text-align: left; }
+  </style>
+</head>
+<body>
+
+  <div id="login-section">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Enter username">
+    <button onclick="login()">Login</button>
+  </div>
+
+  <div id="todo-section" style="display:none;">
+    <h2 id="welcome-message"></h2>
+    <input type="text" id="todo-input" placeholder="Enter todo">
+    <button onclick="addTodo()">Add</button>
+    <ul id="todo-list"></ul>
+  </div>
+
+  <script >
+    
+    
+    const loginSection = document.getElementById("login-section");
+const todoSection = document.getElementById("todo-section");
+const usernameInput = document.getElementById("username");
+const welcomeMessage = document.getElementById("welcome-message");
+const todoInput = document.getElementById("todo-input");
+const todoList = document.getElementById("todo-list");
+
+let currentUser = null;
+let sessionTodos = [];
+
+function login() {
+  const username = usernameInput.value.trim();
+  if (!username) return alert("Please enter a username");
+
+  currentUser = username;
+  sessionStorage.setItem("currentUser", currentUser);
+
+  // 🔴 Clean up localStorage: Keep only current user's key
+  const keysToRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key !== currentUser) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach((key) => localStorage.removeItem(key));
+
+  // Initialize localStorage if not already present
+  if (!localStorage.getItem(currentUser)) {
+    localStorage.setItem(currentUser, JSON.stringify([]));
+  }
+
+  // Clear any previous session todos
+  sessionTodos = [];
+  sessionStorage.setItem("session_" + currentUser, JSON.stringify([]));
+
+  loginSection.style.display = "none";
+  todoSection.style.display = "block";
+  welcomeMessage.textContent = `Welcome, ${currentUser}`;
+  loadSessionTodos();
+}
+
+function loadSessionTodos() {
+  todoList.innerHTML = "";
+  sessionTodos = JSON.parse(sessionStorage.getItem("session_" + currentUser) || "[]");
+  sessionTodos.forEach((todo, index) => {
+    renderTodo(todo, index);
+  });
+}
+
+function renderTodo(todo, index) {
+  const li = document.createElement("li");
+
+  const span = document.createElement("span");
+  span.textContent = todo;
+
+  const editBtn = document.createElement("button");
+  editBtn.textContent = "Edit";
+  editBtn.onclick = () => {
+    const updated = prompt("Edit todo:", todo);
+    if (updated) {
+      updateTodo(index, updated);
+    }
+  };
+
+  const deleteBtn = document.createElement("button");
+  deleteBtn.textContent = "Delete";
+  deleteBtn.onclick = () => {
+    deleteTodo(index);
+    li.remove();
+  };
+
+  li.append(span, editBtn, deleteBtn);
+  todoList.appendChild(li);
+}
+
+function addTodo() {
+  const newTodo = todoInput.value.trim();
+  if (!newTodo) return;
+
+  // Add to localStorage
+  const allTodos = JSON.parse(localStorage.getItem(currentUser) || "[]");
+  allTodos.push(newTodo);
+  localStorage.setItem(currentUser, JSON.stringify(allTodos));
+
+  // Add to session only (for display)
+  sessionTodos.push(newTodo);
+  sessionStorage.setItem("session_" + currentUser, JSON.stringify(sessionTodos));
+
+  renderTodo(newTodo, sessionTodos.length - 1);
+  todoInput.value = "";
+}
+
+function updateTodo(index, updatedText) {
+  sessionTodos[index] = updatedText;
+  sessionStorage.setItem("session_" + currentUser, JSON.stringify(sessionTodos));
+
+  const allTodos = JSON.parse(localStorage.getItem(currentUser) || "[]");
+  const oldText = allTodos.find((t) => t === sessionTodos[index]);
+  const targetIndex = allTodos.indexOf(oldText);
+  if (targetIndex !== -1) {
+    allTodos[targetIndex] = updatedText;
+    localStorage.setItem(currentUser, JSON.stringify(allTodos));
+  }
+
+  loadSessionTodos();
+}
+
+function deleteTodo(index) {
+  sessionTodos.splice(index, 1);
+  sessionStorage.setItem("session_" + currentUser, JSON.stringify(sessionTodos));
+  loadSessionTodos();
+}
+
+window.onload = () => {
+  const savedUser = sessionStorage.getItem("currentUser");
+  if (savedUser) {
+    currentUser = savedUser;
+    loginSection.style.display = "none";
+    todoSection.style.display = "block";
+    welcomeMessage.textContent = `Welcome, ${currentUser}`;
+    loadSessionTodos();
+  }
+};
+
+  </script>
+</body>
+</html>
