@@ -1,0 +1,109 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TODO List</title>
+</head>
+<body>
+  <h2>TODO List</h2>
+  <button onclick="logout()">Logout</button><br><br>
+
+  <input id="taskInput" placeholder="Add task" />
+  <button onclick="addTask()">Add</button>
+
+  <ul id="taskList"></ul>
+
+  <script>
+    const user = localStorage.getItem("currentUser");
+    if (!user) window.location.href = "login.html";
+
+    function getTaskKey() {
+      return user;
+    }
+
+    function getUserTasks() {
+      const tasks = JSON.parse(localStorage.getItem(getTaskKey()));
+      return Array.isArray(tasks) ? tasks : [];
+    }
+
+    function saveUserTasks(tasks) {
+      localStorage.setItem(getTaskKey(), JSON.stringify(tasks));
+    }
+
+    function renderTasks() {
+      const taskList = document.getElementById("taskList");
+      taskList.innerHTML = ""; // Clear the current list
+
+      const tasks = getUserTasks();
+      tasks
+        .filter(task => !task.deleted)  // Exclude tasks that are marked as deleted
+        .forEach(task => {
+          const li = document.createElement("li");
+          li.innerHTML = `
+            ${task.text}
+            <button onclick="editTask(this)">Edit</button>
+            <button onclick="deleteTask(this)">Delete</button>`;
+          taskList.appendChild(li);
+        });
+    }
+
+    function addTask() {
+      const input = document.getElementById("taskInput");
+      const taskText = input.value.trim();
+      if (!taskText) return;
+
+      const tasks = getUserTasks();
+      tasks.push({ text: taskText, deleted: false });
+      saveUserTasks(tasks);
+
+      input.value = ""; // Clear the input field
+      renderTasks(); // Re-render the task list
+    }
+
+    function editTask(button) {
+      const li = button.parentElement;
+      const oldText = li.firstChild.textContent.trim();
+      const newText = prompt("Edit task", oldText);
+      if (newText && newText.trim() !== "") {
+        const tasks = getUserTasks();
+        const task = tasks.find(t => t.text === oldText && !t.deleted);
+        if (task) {
+          task.text = newText.trim();
+          saveUserTasks(tasks);
+          renderTasks(); // Re-render to show updated task
+        }
+      }
+    }
+
+    function deleteTask(button) {
+      const li = button.parentElement;
+      const taskText = li.firstChild.textContent.trim();
+
+      const tasks = getUserTasks();
+      const task = tasks.find(t => t.text === taskText && !t.deleted);
+      if (task) {
+        task.deleted = true; // Mark task as deleted
+        saveUserTasks(tasks); // Save the updated tasks back to localStorage
+        renderTasks(); // Re-render the task list to reflect deletion
+      }
+    }
+
+    function logout() {
+      const currentUser = localStorage.getItem("currentUser");
+
+      // Clean up other users' keys in localStorage
+      for (const key in localStorage) {
+        if (key !== "currentUser" && key !== currentUser) {
+          localStorage.removeItem(key);
+        }
+      }
+
+      localStorage.removeItem("currentUser"); // Remove the current user
+      window.location.href = "login.html"; // Redirect to login page
+    }
+
+    window.onload = renderTasks; // Call renderTasks on page load to display tasks
+  </script>
+</body>
+</html>
