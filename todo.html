@@ -1,0 +1,125 @@
+
+ <!DOCTYPE html>
+ <html>
+ <head>
+   <title>TODO List</title>
+ </head>
+ <body>
+   <h2>TODO List</h2>
+   <button onclick="logout()">Logout</button><br><br>
+ 
+   <input id="taskInput" placeholder="Add task" />
+   <button onclick="addTask()">Add</button>
+ 
+   <ul id="taskList"></ul>
+ 
+   <script>
+     // Get the current username from localStorage
+     const user = localStorage.getItem("currentUser");
+ 
+     if (!user) {
+       window.location.href = "login.html"; // Redirect if not logged in
+     }
+ 
+     // Dynamically create the localStorage key based on the username
+     function getTaskKey() {
+       return user;  // Use the username directly as the key
+     }
+ 
+     // Get tasks from localStorage for the current user
+     function getUserTasks() {
+       const tasks = JSON.parse(localStorage.getItem(getTaskKey())) || [];
+       return tasks;
+     }
+ 
+     // Save tasks to localStorage for the current user
+     function saveUserTasks(tasks) {
+       localStorage.setItem(getTaskKey(), JSON.stringify(tasks));
+     }
+ 
+     // Add task to the list and to localStorage
+     function addTask() {
+       const input = document.getElementById("taskInput");
+       const task = input.value.trim();
+       if (!task) return;
+ 
+       const li = document.createElement("li");
+       li.innerHTML = `${task} 
+         <button onclick="editTask(this)">Edit</button>
+         <button onclick="deleteTask(this)">Delete</button>`;
+       document.getElementById("taskList").appendChild(li);
+ 
+       // Save the new task to localStorage
+       const tasks = getUserTasks();
+       tasks.push(task);
+       saveUserTasks(tasks);
+ 
+       input.value = ""; // Clear input field
+     }
+ 
+     // Edit task
+     function editTask(button) {
+       const li = button.parentElement;
+       const current = li.firstChild.textContent.trim();
+       const updated = prompt("Edit task", current);
+       if (updated) {
+         li.firstChild.textContent = updated + " ";
+         const tasks = getUserTasks();
+         const index = tasks.indexOf(current);
+         if (index !== -1) {
+           tasks[index] = updated;
+           saveUserTasks(tasks); // Save updated tasks to localStorage
+         }
+       }
+     }
+ 
+     // Delete task (only removes from screen, not from localStorage)
+     function deleteTask(button) {
+       const li = button.parentElement;
+       li.remove();  // Remove task from the screen
+ 
+       // We will not remove the task from localStorage to keep the task history
+       // So, we do not modify localStorage when a task is deleted from the UI
+     }
+ 
+     // Load tasks from localStorage
+     function loadTasks() {
+       // Get the current user's tasks
+       const tasks = getUserTasks(); 
+ 
+       // Add tasks to the UI
+       tasks.forEach(task => {
+         const li = document.createElement("li");
+         li.innerHTML = `${task} 
+           <button onclick="editTask(this)">Edit</button>
+           <button onclick="deleteTask(this)">Delete</button>`;
+         document.getElementById("taskList").appendChild(li);
+       });
+     }
+ 
+     // Logout function to clear session
+     function logout() {
+       localStorage.removeItem("currentUser");  // Clear current user
+       window.location.href = "login.html";  // Redirect to login page
+     }
+ 
+     // Ensure no previous user's tasks remain when the page loads
+     window.onload = () => {
+       // If the user is not logged in, redirect to the login page
+       if (!localStorage.getItem("currentUser")) {
+         window.location.href = "login.html"; // If not logged in, redirect to login
+       } else {
+         // Clear out irrelevant data for other users (if exists)
+         for (const key in localStorage) {
+           if (key !== "currentUser" && key !== getTaskKey()) {
+             localStorage.removeItem(key);  // Remove tasks of other users
+           }
+         }
+         // Reload tasks of the current user only
+         loadTasks();
+       }
+     };
+   </script>
+ </body>
+ </html>
+ 
